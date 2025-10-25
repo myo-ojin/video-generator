@@ -1,0 +1,45 @@
+{
+  "enabled": true,
+  "timeout": 300000,
+  "retryCount": 3,
+  "retryDelay": 5000,
+  "claudeCommand": "claude",
+  "minLength": 400,
+  "maxLength": 600,
+  "defaultTheme": "今日のAIニュース",
+  "defaultTone": "professional",
+  "defaultAudience": "AIに興味がある一般視聴者",
+  "structure": {
+    "targetDuration": 75,
+    "opening": {
+      "ratio": 0.07,
+      "description": "挨拶と今日のAIニューストピック紹介"
+    },
+    "topics": {
+      "count": 3,
+      "maxCount": 4,
+      "ratio": 0.8,
+      "description": "各AIニュースの紹介（企業名、技術名、影響を簡潔に）"
+    },
+    "closing": {
+      "ratio": 0.13,
+      "description": "今日のまとめと明日への期待"
+    }
+  },
+  "promptTemplate": {
+    "fixedPrefix": "以下の条件で動画用の原稿を作成してください：",
+    "toneDescriptions": {
+      "enthusiastic": "熱意を持って、エネルギッシュに。視聴者を鼓舞するような表現を使用。",
+      "professional": "専門的で信頼性の高い表現。落ち着いた丁寧な言葉遣い。",
+      "casual": "フレンドリーで親しみやすい表現。会話調で自然な語り口。",
+      "neutral": "中立的で客観的な表現。バランスの取れた語り口。"
+    },
+    "customConstraints": [
+      "読み上げに適した自然な日本語で記述",
+      "企業名や技術名は正確に",
+      "各ニュースは15〜20秒で完結",
+      "テンポよく、簡潔に"
+    ],
+    "customInstructions": "ニュース番組のような簡潔で分かりやすい表現を心がけてください。"
+  }
+}

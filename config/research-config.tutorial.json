@@ -1,0 +1,27 @@
+{
+  "enabled": true,
+  "timeout": 600000,
+  "retryCount": 3,
+  "retryDelay": 5000,
+  "codexCommand": "codex",
+  "codexArgs": ["--search"],
+  "defaultTheme": "最新のWeb開発技術",
+  "defaultKeywords": [
+    "TypeScript",
+    "React",
+    "Next.js",
+    "Vue.js",
+    "Node.js"
+  ],
+  "topicCount": 1,
+  "enableDuplicateCheck": false,
+  "promptTemplate": {
+    "customRequirements": [
+      "最新のトレンドや動向",
+      "実用的な情報や事例",
+      "信頼できる情報源からのデータ",
+      "日本語の情報を優先"
+    ],
+    "customInstructions": "特に初心者向けの情報を重視してください。詳細な解説が可能な情報を収集してください。"
+  }
+}

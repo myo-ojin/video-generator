@@ -1,0 +1,32 @@
+{
+  "enabled": true,
+  "timeout": 600000,
+  "retryCount": 3,
+  "retryDelay": 5000,
+  "codexCommand": "codex",
+  "codexArgs": ["--search"],
+  "defaultTheme": "今日のAIニュース",
+  "defaultKeywords": [
+    "AI",
+    "機械学習",
+    "LLM",
+    "OpenAI",
+    "Google AI",
+    "Anthropic",
+    "生成AI"
+  ],
+  "topicCount": 3,
+  "enableDuplicateCheck": true,
+  "duplicateCheckDays": 7,
+  "maxHistoryDays": 30,
+  "topicHistoryPath": "./cache/topic-history.json",
+  "promptTemplate": {
+    "customRequirements": [
+      "本日または直近24時間以内のニュース",
+      "企業の発表や新製品リリース",
+      "信頼できるニュースソースからの情報",
+      "日本語または英語の情報"
+    ],
+    "customInstructions": "各ニュースは独立したトピックとして、企業名・製品名・主要な変更点を明確に記載してください。"
+  }
+}

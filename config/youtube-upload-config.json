@@ -1,0 +1,19 @@
+{
+  "enabled": true,
+  "timeout": 600000,
+  "retryCount": 2,
+  "retryDelay": 10000,
+  "credentialsPath": "config/credentials.json",
+  "privacyStatus": "private",
+  "category": "28",
+  "titleTemplate": "AIニュース - {date}",
+  "descriptionTemplate": "AIに関する最新ニュースをお届けします。\n\n📅 配信日: {date}\n\n#AI #テクノロジー #ニュース",
+  "tags": [
+    "AI",
+    "人工知能",
+    "テクノロジー",
+    "ニュース",
+    "機械学習",
+    "ディープラーニング"
+  ]
+}

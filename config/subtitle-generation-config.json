@@ -1,0 +1,10 @@
+{
+  "enabled": true,
+  "timeout": 60000,
+  "retryCount": 2,
+  "retryDelay": 1000,
+  "format": "srt",
+  "maxCharsPerLine": 42,
+  "maxLines": 2,
+  "readingSpeed": 5.8
+}

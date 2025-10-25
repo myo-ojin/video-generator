@@ -1,0 +1,11 @@
+{
+  "enabled": true,
+  "timeout": 300000,
+  "retryCount": 3,
+  "retryDelay": 5000,
+  "voicevoxHost": "http://localhost:50021",
+  "speaker": 3,
+  "speed": 1.1,
+  "pitch": 0.0,
+  "intonation": 1.0
+}

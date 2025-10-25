@@ -1,0 +1,113 @@
+{
+  "outputDir": "output",
+  "logLevel": "INFO",
+  "userProfilePath": "config/user-profile.json",
+  "credentialsPath": "config/credentials.json",
+  "nodes": {
+    "research": {
+      "enabled": true,
+      "timeout": 600000,
+      "retryCount": 3,
+      "retryDelay": 5000,
+      "codexCommand": "codex",
+      "codexArgs": ["--search"],
+      "topicCount": 3,
+      "enableDuplicateCheck": true,
+      "duplicateCheckDays": 7,
+      "maxHistoryDays": 30,
+      "topicHistoryPath": "cache/topic-history.json",
+      "defaultTheme": "今日のAIニュース",
+      "defaultKeywords": ["AI", "機械学習", "LLM", "OpenAI", "Google AI"],
+      "promptTemplate": {
+        "customRequirements": [
+          "本日または直近24時間以内のニュース",
+          "企業の発表や新製品リリース",
+          "信頼できるニュースソースからの情報",
+          "日本語または英語の情報"
+        ],
+        "customInstructions": "各ニュースは独立したトピックとして、企業名・製品名・主要な変更点を明確に記載してください。"
+      }
+    },
+    "scriptGeneration": {
+      "enabled": true,
+      "timeout": 300000,
+      "retryCount": 3,
+      "retryDelay": 5000,
+      "claudeCommand": "claude",
+      "minLength": 400,
+      "maxLength": 600,
+      "defaultTheme": "今日のAIニュース",
+      "defaultTone": "professional",
+      "defaultAudience": "AIに興味がある一般視聴者",
+      "structure": {
+        "targetDuration": 75,
+        "opening": {
+          "ratio": 0.07,
+          "description": "挨拶と今日のAIニューストピック紹介"
+        },
+        "topics": {
+          "count": 3,
+          "maxCount": 4,
+          "ratio": 0.8,
+          "description": "各AIニュースの紹介（企業名、技術名、影響を簡潔に）"
+        },
+        "closing": {
+          "ratio": 0.13,
+          "description": "今日のまとめと明日への期待"
+        }
+      },
+      "promptTemplate": {
+        "customConstraints": [
+          "読み上げに適した自然な日本語で記述",
+          "企業名や技術名は正確に",
+          "各ニュースは15〜20秒で完結",
+          "テンポよく、簡潔に"
+        ],
+        "customInstructions": "ニュース番組のような簡潔で分かりやすい表現を心がけてください。"
+      }
+    },
+    "subtitleGeneration": {
+      "enabled": true,
+      "timeout": 60000,
+      "retryCount": 0,
+      "retryDelay": 0,
+      "format": "srt",
+      "maxCharsPerLine": 42,
+      "maxLines": 2,
+      "charsPerSecond": 5.8
+    },
+    "voiceSynthesis": {
+      "enabled": true,
+      "timeout": 300000,
+      "retryCount": 0,
+      "retryDelay": 0,
+      "voicevoxHost": "http://localhost:50021",
+      "speaker": 1,
+      "speed": 1.0,
+      "pitch": 0.0,
+      "intonation": 1.0
+    },
+    "videoComposition": {
+      "enabled": true,
+      "timeout": 600000,
+      "retryCount": 0,
+      "retryDelay": 0,
+      "ffmpegCommand": "ffmpeg",
+      "resolution": "1280x720",
+      "fps": 30,
+      "codec": "libx264",
+      "backgroundImage": "assets/background.jpg"
+    },
+    "youtubeUpload": {
+      "enabled": true,
+      "timeout": 600000,
+      "retryCount": 2,
+      "retryDelay": 10000,
+      "privacyStatus": "private",
+      "category": "28",
+      "titleTemplate": "AIニュース - {{date}}",
+      "descriptionTemplate": "今日のAI業界の最新ニュースをお届けします。\n\n#AI #機械学習 #テクノロジー",
+      "tags": ["AI", "人工知能", "機械学習", "テクノロジー", "ニュース"]
+    }
+  }
+}

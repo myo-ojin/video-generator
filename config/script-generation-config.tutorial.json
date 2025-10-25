@@ -1,0 +1,32 @@
+{
+  "enabled": true,
+  "timeout": 300000,
+  "retryCount": 3,
+  "retryDelay": 5000,
+  "claudeCommand": "claude",
+  "claudeArgs": [],
+  "defaultContentType": "tutorial",
+  "defaultTheme": "Web開発技術のチュートリアル",
+  "lengthRange": {
+    "min": 1500,
+    "max": 2500
+  },
+  "charsPerSecond": 6,
+  "autoAdjustLength": true,
+  "tone": "casual",
+  "structure": {
+    "opening": {
+      "duration": 15,
+      "content": "チュートリアルの概要と目標の説明"
+    },
+    "topics": {
+      "duration": 120,
+      "content": "具体的な手順や例を詳しく解説"
+    },
+    "closing": {
+      "duration": 15,
+      "content": "まとめと次のステップの提案"
+    }
+  },
+  "customInstructions": "初心者にも分かりやすく、実践的な例を交えて説明してください。各ステップは明確に区切り、視聴者が迷わないように丁寧に解説してください。"
+}

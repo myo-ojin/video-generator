@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "timeout": 600000,
+  "retryCount": 3,
+  "retryDelay": 5000,
+  "ffmpegCommand": "ffmpeg",
+  "resolution": "1280x720",
+  "fps": 30,
+  "codec": "libx264",
+  "preset": "medium",
+  "crf": 23,
+  "subtitleStyle": {
+    "fontSize": 24,
+    "primaryColor": "&HFFFFFF&",
+    "outlineColor": "&H000000&",
+    "outline": 2
+  }
+}

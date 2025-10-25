@@ -1,0 +1,32 @@
+{
+  "enabled": true,
+  "timeout": 300000,
+  "retryCount": 3,
+  "retryDelay": 5000,
+  "claudeCommand": "claude",
+  "claudeArgs": [],
+  "defaultContentType": "ai-news",
+  "defaultTheme": "今日のAIニュース",
+  "lengthRange": {
+    "min": 400,
+    "max": 600
+  },
+  "charsPerSecond": 6,
+  "autoAdjustLength": true,
+  "tone": "professional",
+  "structure": {
+    "opening": {
+      "duration": 10,
+      "content": "今日のAIニュースを3つお届けします"
+    },
+    "topics": {
+      "duration": 20,
+      "content": "各ニュースの要点を簡潔に説明"
+    },
+    "closing": {
+      "duration": 10,
+      "content": "まとめとチャンネル登録の呼びかけ"
+    }
+  },
+  "customInstructions": "各ニュースは簡潔に、視聴者にとって分かりやすい言葉で説明してください。専門用語は必要に応じて簡単に補足してください。"
+}
