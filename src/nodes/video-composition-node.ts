@@ -13,6 +13,8 @@ import { spawn } from 'child_process';
 import path from 'path';
 import fs from 'fs/promises';
 
+type SubtitleFilterFormat = 'srt' | 'vtt' | 'ass';
+
 /**
  * Video configuration interface
  */
@@ -30,6 +32,7 @@ export interface VideoConfig {
     outlineColor?: string;
     outline?: number;
   };
+  subtitleFormat?: SubtitleFilterFormat;
 }
 
 /**
@@ -51,33 +54,22 @@ export class VideoCompositionNode extends BaseNode {
     audioPath: string,
     subtitlePath: string,
     outputPath: string,
-    config: VideoConfig
+    config: VideoConfig,
+    subtitleFormat: SubtitleFilterFormat
   ): string[] {
     const args: string[] = [];
 
-    // Input: background (image or video or solid color)
     if (config.backgroundVideo) {
       args.push('-i', config.backgroundVideo);
     } else if (config.backgroundImage) {
-      // Create video from static image
       args.push('-loop', '1', '-i', config.backgroundImage);
     } else {
-      // Create solid color background
-      args.push(
-        '-f',
-        'lavfi',
-        '-i',
-        `color=c=black:s=${config.resolution}:r=${config.fps}`
-      );
+      args.push('-f', 'lavfi', '-i', `color=c=black:s=${config.resolution}:r=${config.fps}`);
     }
 
-    // Input: audio
     args.push('-i', audioPath);
-
-    // Get audio duration for video length
     args.push('-shortest');
 
-    // Video codec and settings
     args.push(
       '-c:v',
       config.codec || 'libx264',
@@ -89,28 +81,24 @@ export class VideoCompositionNode extends BaseNode {
       'yuv420p'
     );
 
-    // Audio codec
     args.push('-c:a', 'aac', '-b:a', '192k');
 
-    // Subtitle filter
-    const subtitleStyle = config.subtitleStyle || {
-      fontSize: 24,
-      primaryColor: '&HFFFFFF&',
-      outlineColor: '&H000000&',
-      outline: 2,
-    };
+    const escapedSubtitlePath = subtitlePath.replace(/\\/g, '\\\\').replace(/:/g, '\\:');
 
-    // For FFmpeg on Windows, escape backslashes and special characters in the file path
-    // subtitles filter requires filename to be in single quotes when using force_style
-    const escapedSubtitlePath = subtitlePath.replace(/\\/g, '\\\\\\\\').replace(/:/g, '\\\\:');
+    if (subtitleFormat === 'ass') {
+      args.push('-vf', `ass='${escapedSubtitlePath}'`);
+    } else {
+      const subtitleStyle = config.subtitleStyle || {
+        fontSize: 24,
+        primaryColor: '&HFFFFFF&',
+        outlineColor: '&H000000&',
+        outline: 2
+      };
+      const subtitleFilter = `subtitles='${escapedSubtitlePath}':force_style='FontSize=${subtitleStyle.fontSize},PrimaryColour=${subtitleStyle.primaryColor},OutlineColour=${subtitleStyle.outlineColor},Outline=${subtitleStyle.outline}'`;
+      args.push('-vf', subtitleFilter);
+    }
 
-    const subtitleFilter = `subtitles=${escapedSubtitlePath}:force_style='FontSize=${subtitleStyle.fontSize},PrimaryColour=${subtitleStyle.primaryColor},OutlineColour=${subtitleStyle.outlineColor},Outline=${subtitleStyle.outline}'`;
-    args.push('-vf', subtitleFilter);
-
-    // Resolution and framerate
     args.push('-s', config.resolution, '-r', String(config.fps));
-
-    // Output (overwrite existing)
     args.push('-y', outputPath);
 
     return args;
@@ -123,7 +111,8 @@ export class VideoCompositionNode extends BaseNode {
     audioPath: string,
     subtitlePath: string,
     config: VideoConfig,
-    timeout: number
+    timeout: number,
+    subtitleFormat: SubtitleFilterFormat
   ): Promise<string> {
     const outputPath = path.join(path.dirname(audioPath), 'video.mp4');
     const command = 'ffmpeg';
@@ -131,7 +120,8 @@ export class VideoCompositionNode extends BaseNode {
       audioPath,
       subtitlePath,
       outputPath,
-      config
+      config,
+      config.subtitleFormat ?? subtitleFormat
     );
 
     logger.info(`Executing FFmpeg command:`);
@@ -229,17 +219,39 @@ export class VideoCompositionNode extends BaseNode {
         );
       }
 
-      const subtitlePath = path.join(input.workDir, 'subtitles.srt');
-      try {
-        await fs.access(subtitlePath);
-      } catch {
+      const subtitleCandidates: Array<{ format: SubtitleFilterFormat; filename: string }> = [
+        { format: 'ass', filename: 'subtitles.ass' },
+        { format: 'srt', filename: 'subtitles.srt' },
+        { format: 'vtt', filename: 'subtitles.vtt' }
+      ];
+
+      let subtitlePath: string | undefined;
+      let subtitleFormat: SubtitleFilterFormat | undefined;
+
+      for (const candidate of subtitleCandidates) {
+        const candidatePath = path.join(input.workDir, candidate.filename);
+        try {
+          await fs.access(candidatePath);
+          subtitlePath = candidatePath;
+          subtitleFormat = candidate.format;
+          break;
+        } catch {
+          continue;
+        }
+      }
+
+      if (!subtitlePath || !subtitleFormat) {
         throw new PipelineError(
           ErrorType.FILE_NOT_FOUND,
           this.name,
-          `Subtitle file not found: ${subtitlePath}`,
+          'Subtitle file not found: expected subtitles.ass / subtitles.srt / subtitles.vtt',
           new Error('Subtitle file does not exist')
         );
       }
+
+      const resolvedSubtitlePath = subtitlePath as string;
+      const resolvedSubtitleFormat = subtitleFormat as SubtitleFilterFormat;
+
 
       // Check if background file exists (if specified)
       if (this.config.backgroundImage) {
@@ -271,7 +283,7 @@ export class VideoCompositionNode extends BaseNode {
       );
 
       // Get subtitle file info
-      const subtitleStats = await fs.stat(subtitlePath);
+      const subtitleStats = await fs.stat(resolvedSubtitlePath);
       logger.info(
         `Subtitle file: ${(subtitleStats.size / 1024).toFixed(2)} KB`
       );
@@ -286,6 +298,7 @@ export class VideoCompositionNode extends BaseNode {
         backgroundImage: this.config.backgroundImage,
         backgroundVideo: this.config.backgroundVideo,
         subtitleStyle: this.config.subtitleStyle,
+        subtitleFormat: resolvedSubtitleFormat,
       };
 
       logger.info(`Video resolution: ${videoConfig.resolution}`);
@@ -305,9 +318,10 @@ export class VideoCompositionNode extends BaseNode {
       const timeout = this.config.timeout || 600000; // 10 minutes default
       const outputPath = await this.executeFFmpeg(
         audioPath,
-        subtitlePath,
+        resolvedSubtitlePath,
         videoConfig,
-        timeout
+        timeout,
+        resolvedSubtitleFormat
       );
 
       // Validate output

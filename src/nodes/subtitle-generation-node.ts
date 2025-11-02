@@ -8,6 +8,7 @@
  * - Timestamp assignment based on configurable reading speed and min/max duration
  * - Supports SRT, VTT and ASS (stylised) subtitle output
  * - Optional keyword highlighting for ASS output
+ * - Optional audio-synchronised timing using generated narration duration
  */
 
 import { BaseNode } from './base/base-node.js';
@@ -19,6 +20,7 @@ import {
   SubtitleData
 } from '../types/index.js';
 import { readText, writeText, fileExists } from '../utils/file-utils.js';
+import { getAudioDuration } from '../utils/audio-utils.js';
 import path from 'path';
 
 type SubtitleFormat = 'srt' | 'vtt' | 'ass';
@@ -67,12 +69,29 @@ export class SubtitleGenerationNode extends BaseNode {
 
       this.logger.info(`Loaded script: ${rawScript.length} characters`);
 
-      // Segment and timestamp subtitles
       let segments = this.splitIntoSegments(rawScript, config);
       this.logger.info(`Created ${segments.length} subtitle segments`);
-      segments = this.assignTimestamps(segments, config);
 
-      // Prepare output depending on requested format
+      const totalChars = segments.reduce((sum, segment) => sum + segment.text.replace(/\n/g, '').length, 0);
+
+      let audioDuration: number | null = null;
+      if (config.useAudioDuration !== false && segments.length > 0) {
+        const audioPath = path.join(input.workDir, 'audio.wav');
+        if (await fileExists(audioPath)) {
+          audioDuration = await getAudioDuration(audioPath);
+          if (audioDuration && audioDuration > 0) {
+            this.logger.info(`Detected audio duration: ${audioDuration.toFixed(2)}s`);
+          } else {
+            this.logger.warn('Failed to detect audio duration via ffprobe, falling back to configured reading speed');
+            audioDuration = null;
+          }
+        } else {
+          this.logger.warn(`Audio file not found (${audioPath}); falling back to configured reading speed`);
+        }
+      }
+
+      segments = this.assignTimestamps(segments, config, totalChars, audioDuration ?? undefined);
+
       let outputContent: string;
       let outputFileName: string;
       switch (format) {
@@ -113,9 +132,6 @@ export class SubtitleGenerationNode extends BaseNode {
     }
   }
 
-  /**
-   * Split script into subtitle segments
-   */
   private splitIntoSegments(script: string, config: SubtitleGenerationNodeConfig): SubtitleSegment[] {
     const maxCharsPerLine = config.maxCharsPerLine ?? 42;
     const maxLines = config.maxLines ?? 2;
@@ -157,13 +173,8 @@ export class SubtitleGenerationNode extends BaseNode {
     return segments;
   }
 
-  /**
-   * Split text by sentences (handles Japanese and English punctuation)
-   */
   private splitBySentences(text: string): string[] {
-    const parts = text
-      .replace(/\r/g, '')
-      .split(/([ÅBÅIÅH!?]\s*|\n+)/);
+    const parts = text.replace(/\r/g, '').split(/([„ÄÇÔºÅÔºü!?]\s*|\n+)/);
 
     const sentences: string[] = [];
     let buffer = '';
@@ -174,7 +185,7 @@ export class SubtitleGenerationNode extends BaseNode {
       }
 
       buffer += part;
-      if (/^[ÅBÅIÅH!?\n]+$/.test(part)) {
+      if (/^[„ÄÇÔºÅÔºü!?\n]+$/.test(part)) {
         sentences.push(buffer);
         buffer = '';
       }
@@ -187,9 +198,6 @@ export class SubtitleGenerationNode extends BaseNode {
     return sentences;
   }
 
-  /**
-   * Break segment into lines respecting maxCharsPerLine/maxLines
-   */
   private formatSegmentText(text: string, maxCharsPerLine: number, maxLines: number): string {
     const sanitized = text.replace(/\s+/g, ' ').trim();
     if (sanitized.length <= maxCharsPerLine) {
@@ -203,7 +211,7 @@ export class SubtitleGenerationNode extends BaseNode {
       if (currentLine.length >= maxCharsPerLine && this.isBreakPoint(char)) {
         lines.push(currentLine.trim());
         currentLine = '';
-        if (/^[,ÅAÅB\s]$/.test(char)) {
+        if (/^[,„ÄÅ„ÄÇ\s]$/.test(char)) {
           continue;
         }
       }
@@ -228,29 +236,39 @@ export class SubtitleGenerationNode extends BaseNode {
     return lines.slice(0, maxLines).join('\n');
   }
 
-  /**
-   * Natural break point characters
-   */
   private isBreakPoint(char: string): boolean {
-    return /[ÅAÅB.,!?\s]/.test(char);
+    return /[„ÄÅ„ÄÇ.,!?\s]/.test(char);
   }
 
-  /**
-   * Assign timestamps to segments
-   */
   private assignTimestamps(
     segments: SubtitleSegment[],
-    config: SubtitleGenerationNodeConfig
+    config: SubtitleGenerationNodeConfig,
+    totalChars: number,
+    audioDuration?: number
   ): SubtitleSegment[] {
-    const readingSpeed = config.readingSpeed ?? 5.8;
+    const explicitSpeed = config.readingSpeed ?? 5.8;
     const minDuration = config.minDuration ?? 1.8;
     const maxDuration = config.maxDuration ?? 3.0;
 
-    let currentTime = 0;
+    let readingSpeed = explicitSpeed;
+    let usingAudio = false;
 
-    return segments.map(segment => {
-      const charCount = segment.text.replace(/\n/g, '').length;
+    if (audioDuration && audioDuration > 0 && totalChars > 0) {
+      readingSpeed = Math.max(totalChars / audioDuration, 0.01);
+      usingAudio = true;
+      this.logger.debug(
+        `Computed reading speed from audio: ${readingSpeed.toFixed(3)} chars/sec (totalChars=${totalChars})`
+      );
+    }
+
+    let currentTime = 0;
+    const timeline = segments.map(segment => {
+      const charCount = Math.max(segment.text.replace(/\n/g, '').length, 1);
       let duration = charCount / readingSpeed;
+      if (!Number.isFinite(duration) || duration <= 0) {
+        duration = minDuration;
+      }
+
       duration = Math.max(minDuration, Math.min(maxDuration, duration));
 
       const startTime = this.formatTimestamp(currentTime);
@@ -263,22 +281,32 @@ export class SubtitleGenerationNode extends BaseNode {
         endTime
       };
     });
+
+    if (usingAudio && timeline.length > 0) {
+      const targetEnd = audioDuration!;
+      const totalAssigned = this.parseTimestamp(timeline[timeline.length - 1].endTime);
+      const drift = targetEnd - totalAssigned;
+      if (Math.abs(drift) > 0.25) {
+        this.logger.debug(`Adjusting final subtitle by ${drift.toFixed(3)}s to align with audio length`);
+      }
+      const last = timeline[timeline.length - 1];
+      const lastStartSeconds = this.parseTimestamp(last.startTime);
+      if (lastStartSeconds >= targetEnd) {
+        const adjustedStart = Math.max(0, targetEnd - minDuration);
+        last.startTime = this.formatTimestamp(adjustedStart);
+      }
+      last.endTime = this.formatTimestamp(targetEnd);
+    }
+
+    return timeline;
   }
 
-  /**
-   * Generate SRT content
-   */
   private generateSRT(segments: SubtitleSegment[]): string {
     return segments
-      .map(segment => {
-        return `${segment.index}\n${segment.startTime} --> ${segment.endTime}\n${segment.text}\n`;
-      })
+      .map(segment => `${segment.index}\n${segment.startTime} --> ${segment.endTime}\n${segment.text}\n`)
       .join('\n');
   }
 
-  /**
-   * Generate VTT content
-   */
   private generateVTT(segments: SubtitleSegment[]): string {
     const lines: string[] = ['WEBVTT', ''];
     for (const segment of segments) {
@@ -291,9 +319,6 @@ export class SubtitleGenerationNode extends BaseNode {
     return lines.join('\n');
   }
 
-  /**
-   * Generate ASS content with styling/highlighting
-   */
   private generateASS(
     segments: SubtitleSegment[],
     config: SubtitleGenerationNodeConfig
@@ -329,15 +354,12 @@ export class SubtitleGenerationNode extends BaseNode {
     return header.concat(dialogues).join('\n');
   }
 
-  /**
-   * Prepare ASS text with fade and optional highlight
-   */
   private prepareAssText(text: string, config: SubtitleGenerationNodeConfig, style: AssStyleConfig): string {
     const baseColor = style.primaryColor ?? '&H00FFFFFF&';
     const highlightEnabled = config.highlight?.enabled ?? true;
     const highlightPattern = config.highlight?.pattern
       ? new RegExp(config.highlight.pattern, 'g')
-      : /([0-9ÇO-ÇX]+[0-9ÇO-ÇX.,Åìñúâ≠]*|[A-Z]{2,}[A-Za-z0-9]*)/g;
+      : /([0-9Ôºê-Ôºô]+[0-9Ôºê-Ôºô.,ÔºÖ‰∏áÂÑÑ]*|[A-Z]{2,}[A-Za-z0-9]*)/g;
     const highlightColor = config.highlight?.color ?? '&H0000E0B8&';
 
     let processed = text.replace(/\r/g, '').replace(/\n/g, '\\N');
@@ -353,9 +375,6 @@ export class SubtitleGenerationNode extends BaseNode {
     return `{\\fad(${fadeIn},${fadeOut})}${processed}`;
   }
 
-  /**
-   * Build ASS style from config
-   */
   private getAssStyle(config: SubtitleGenerationNodeConfig): AssStyleConfig {
     const style = config.style ?? {};
     return {
@@ -377,23 +396,15 @@ export class SubtitleGenerationNode extends BaseNode {
     };
   }
 
-  /**
-   * Convert SRT timestamp to ASS timestamp (H:MM:SS.CC)
-   */
   private formatAsstime(timestamp: string): string {
     const totalSeconds = this.parseTimestamp(timestamp);
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = Math.floor(totalSeconds % 60);
     const centiseconds = Math.floor(((totalSeconds % 1) * 100) + 0.5);
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds
-      .toString()
-      .padStart(2, '0')}.${centiseconds.toString().padStart(2, '0')}`;
+    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${centiseconds.toString().padStart(2, '0')}`;
   }
 
-  /**
-   * Format seconds to SRT timestamp
-   */
   private formatTimestamp(seconds: number): string {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -402,9 +413,6 @@ export class SubtitleGenerationNode extends BaseNode {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')},${String(millis).padStart(3, '0')}`;
   }
 
-  /**
-   * Calculate total duration from segments
-   */
   private calculateTotalDuration(segments: SubtitleSegment[]): number {
     if (segments.length === 0) {
       return 0;
@@ -413,9 +421,6 @@ export class SubtitleGenerationNode extends BaseNode {
     return this.parseTimestamp(lastSegment.endTime);
   }
 
-  /**
-   * Parse timestamp string to seconds
-   */
   private parseTimestamp(timestamp: string): number {
     const [hh, mm, rest] = timestamp.split(':');
     const [ss, ms] = rest.split(',');

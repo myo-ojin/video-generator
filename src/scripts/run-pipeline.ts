@@ -5,8 +5,8 @@
  * Executes the full video generation pipeline (Node 03-08):
  * 1. Research Node - Topic gathering
  * 2. Script Generation Node - Script creation
- * 3. Subtitle Generation Node - SRT generation
- * 4. Voice Synthesis Node - Audio synthesis with VOICEVOX
+ * 3. Voice Synthesis Node - Audio synthesis with VOICEVOX
+ * 4. Subtitle Generation Node - Subtitle authoring (ASS/SRT)
  * 5. Video Composition Node - Video assembly with FFmpeg
  * 6. YouTube Upload Node - Video upload to YouTube
  *
@@ -96,8 +96,8 @@ Pipeline Execution Script
 Executes the full video generation pipeline (Node 03-08):
   1. Research Node - Topic gathering
   2. Script Generation Node - Script creation
-  3. Subtitle Generation Node - SRT generation
-  4. Voice Synthesis Node - Audio synthesis with VOICEVOX
+  3. Voice Synthesis Node - Audio synthesis with VOICEVOX
+  4. Subtitle Generation Node - Subtitle authoring (ASS/SRT)
   5. Video Composition Node - Video assembly with FFmpeg
   6. YouTube Upload Node - Video upload to YouTube
 
@@ -269,31 +269,7 @@ async function main(): Promise<void> {
     }
 
     // ============================================================
-    // Node 05: Subtitle Generation Node
-    // ============================================================
-    if (config.nodes?.subtitleGeneration && config.nodes.subtitleGeneration.enabled !== false) {
-      const subtitleNode = new SubtitleGenerationNode(config.nodes.subtitleGeneration as SubtitleGenerationNodeConfig);
-      const input: NodeInput = {
-        config: config.nodes.subtitleGeneration,
-        workDir,
-        previousOutput
-      };
-
-      const result = await executeNode(subtitleNode, 'Subtitle Generation Node', input);
-      results.push(result);
-
-      if (!result.success) {
-        logger.error('Pipeline halted due to Subtitle Generation Node failure');
-        process.exit(1);
-      }
-
-      previousOutput = result.output;
-    } else {
-      logger.info('Subtitle Generation Node is disabled, skipping...');
-    }
-
-    // ============================================================
-    // Node 06: Voice Synthesis Node
+    // Node 05: Voice Synthesis Node
     // ============================================================
     if (config.nodes?.voiceSynthesis && config.nodes.voiceSynthesis.enabled !== false) {
       const voiceNode = new VoiceSynthesisNode(config.nodes.voiceSynthesis as VoiceSynthesisNodeConfig);
@@ -314,6 +290,30 @@ async function main(): Promise<void> {
       previousOutput = result.output;
     } else {
       logger.info('Voice Synthesis Node is disabled, skipping...');
+    }
+
+    // ============================================================
+    // Node 06: Subtitle Generation Node
+    // ============================================================
+    if (config.nodes?.subtitleGeneration && config.nodes.subtitleGeneration.enabled !== false) {
+      const subtitleNode = new SubtitleGenerationNode(config.nodes.subtitleGeneration as SubtitleGenerationNodeConfig);
+      const input: NodeInput = {
+        config: config.nodes.subtitleGeneration,
+        workDir,
+        previousOutput
+      };
+
+      const result = await executeNode(subtitleNode, 'Subtitle Generation Node', input);
+      results.push(result);
+
+      if (!result.success) {
+        logger.error('Pipeline halted due to Subtitle Generation Node failure');
+        process.exit(1);
+      }
+
+      previousOutput = result.output;
+    } else {
+      logger.info('Subtitle Generation Node is disabled, skipping...');
     }
 
     // ============================================================

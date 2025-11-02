@@ -153,6 +153,16 @@ npm run run:pipeline -- --config config/my-pipeline-config.json
 npm run run:pipeline -- --output-dir output/test
 ```
 
+**Updated pipeline order (2025-11-02)**:
+1. Research Node – topic gathering
+2. Script Generation Node – script creation
+3. Voice Synthesis Node – audio synthesis (generates `audio.wav`)
+4. Subtitle Generation Node – audio-synchronised subtitles (SRT/ASS)
+5. Video Composition Node – combine assets with FFmpeg
+6. YouTube Upload Node – publish to YouTube (optional)
+
+Subtitles now default to `useAudioDuration: true`, so timings match the generated narration automatically.
+
 **パイプライン実行の流れ**:
 1. リサーチノード → AIニュースを収集
 2. 原稿生成ノード → 動画原稿を作成

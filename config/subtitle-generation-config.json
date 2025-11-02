@@ -28,5 +28,6 @@
     "marginR": 80,
     "fadeIn": 120,
     "fadeOut": 150
-  }
+  },
+  "useAudioDuration": true
 }

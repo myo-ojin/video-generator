@@ -100,6 +100,7 @@ export interface SubtitleGenerationNodeConfig extends NodeConfig {
   readingSpeed: number; // chars per second
   minDuration?: number; // seconds
   maxDuration?: number; // seconds
+  useAudioDuration?: boolean;
   highlight?: {
     enabled?: boolean;
     color?: string;
