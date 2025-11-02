@@ -4,7 +4,29 @@
   "retryCount": 2,
   "retryDelay": 1000,
   "format": "srt",
-  "maxCharsPerLine": 42,
+  "maxCharsPerLine": 20,
   "maxLines": 2,
-  "readingSpeed": 5.8
+  "readingSpeed": 8.5,
+  "minDuration": 1.8,
+  "maxDuration": 2.4,
+  "highlight": {
+    "enabled": true,
+    "color": "&H0000E0B8&"
+  },
+  "style": {
+    "fontName": "Noto Sans JP Bold",
+    "fontSize": 68,
+    "primaryColor": "&H00FFFFFF&",
+    "outlineColor": "&H00000000&",
+    "outline": 4,
+    "shadow": 1,
+    "backColor": "&H60000000&",
+    "bold": 1,
+    "alignment": 5,
+    "marginV": 320,
+    "marginL": 80,
+    "marginR": 80,
+    "fadeIn": 120,
+    "fadeOut": 150
+  }
 }

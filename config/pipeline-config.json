@@ -10,14 +10,22 @@
       "retryCount": 3,
       "retryDelay": 5000,
       "codexCommand": "codex",
-      "codexArgs": ["--search"],
+      "codexArgs": [
+        "--search"
+      ],
       "topicCount": 3,
       "enableDuplicateCheck": true,
       "duplicateCheckDays": 7,
       "maxHistoryDays": 30,
       "topicHistoryPath": "cache/topic-history.json",
       "defaultTheme": "今日のAIニュース",
-      "defaultKeywords": ["AI", "機械学習", "LLM", "OpenAI", "Google AI"],
+      "defaultKeywords": [
+        "AI",
+        "機械学習",
+        "LLM",
+        "OpenAI",
+        "Google AI"
+      ],
       "promptTemplate": {
         "customRequirements": [
           "本日または直近24時間以内のニュース",
@@ -34,8 +42,6 @@
       "retryCount": 3,
       "retryDelay": 5000,
       "claudeCommand": "claude",
-      "minLength": 400,
-      "maxLength": 600,
       "defaultTheme": "今日のAIニュース",
       "defaultTone": "professional",
       "defaultAudience": "AIに興味がある一般視聴者",
@@ -64,7 +70,15 @@
           "テンポよく、簡潔に"
         ],
         "customInstructions": "ニュース番組のような簡潔で分かりやすい表現を心がけてください。"
-      }
+      },
+      "defaultContentType": "ai-news",
+      "lengthRange": {
+        "min": 500,
+        "max": 550
+      },
+      "autoAdjustLength": true,
+      "charsPerSecond": 8.5,
+      "tone": "professional"
     },
     "subtitleGeneration": {
       "enabled": true,
@@ -72,9 +86,31 @@
       "retryCount": 0,
       "retryDelay": 0,
       "format": "srt",
-      "maxCharsPerLine": 42,
+      "maxCharsPerLine": 20,
       "maxLines": 2,
-      "charsPerSecond": 5.8
+      "readingSpeed": 8.5,
+      "minDuration": 1.8,
+      "maxDuration": 2.4,
+      "highlight": {
+        "enabled": true,
+        "color": "&H0000E0B8&"
+      },
+      "style": {
+        "fontName": "Noto Sans JP Bold",
+        "fontSize": 68,
+        "primaryColor": "&H00FFFFFF&",
+        "outlineColor": "&H00000000&",
+        "outline": 4,
+        "shadow": 1,
+        "backColor": "&H60000000&",
+        "bold": 1,
+        "alignment": 5,
+        "marginV": 320,
+        "marginL": 80,
+        "marginR": 80,
+        "fadeIn": 120,
+        "fadeOut": 150
+      }
     },
     "voiceSynthesis": {
       "enabled": true,
@@ -83,9 +119,9 @@
       "retryDelay": 0,
       "voicevoxHost": "http://localhost:50021",
       "speaker": 1,
-      "speed": 1.0,
-      "pitch": 0.0,
-      "intonation": 1.0
+      "speed": 1,
+      "pitch": 0,
+      "intonation": 1
     },
     "videoComposition": {
       "enabled": true,
@@ -107,7 +143,13 @@
       "category": "28",
       "titleTemplate": "AIニュース - {{date}}",
       "descriptionTemplate": "今日のAI業界の最新ニュースをお届けします。\n\n#AI #機械学習 #テクノロジー",
-      "tags": ["AI", "人工知能", "機械学習", "テクノロジー", "ニュース"]
+      "tags": [
+        "AI",
+        "人工知能",
+        "機械学習",
+        "テクノロジー",
+        "ニュース"
+      ]
     }
   }
 }

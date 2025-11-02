@@ -1,6 +1,6 @@
 /**
  * Data structure type definitions
- * Based on: .kiro/specs/auto-video-generation/design.md
+ * Based on: Kiro Specs Archive/auto-video-generation/design.md
  */
 
 /**
@@ -72,7 +72,7 @@ export interface SubtitleSegment {
  * Subtitle data
  */
 export interface SubtitleData {
-  format: 'srt' | 'vtt';
+  format: 'srt' | 'vtt' | 'ass';
   segments: SubtitleSegment[];
   totalDuration: number; // in seconds
   generatedAt: string;
@@ -142,3 +142,4 @@ export interface TopicHistory {
   entries: TopicHistoryEntry[];
   lastUpdated: string;
 }
+

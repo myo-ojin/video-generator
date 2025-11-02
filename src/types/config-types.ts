@@ -1,6 +1,6 @@
 /**
  * Configuration type definitions
- * Based on: .kiro/specs/auto-video-generation/design.md
+ * Based on: Kiro Specs Archive/auto-video-generation/design.md
  */
 
 import { NodeConfig } from './node-types.js';
@@ -94,10 +94,33 @@ export interface ScriptGenerationNodeConfig extends NodeConfig {
  * Subtitle generation node specific configuration
  */
 export interface SubtitleGenerationNodeConfig extends NodeConfig {
-  format: 'srt' | 'vtt';
+  format: 'srt' | 'vtt' | 'ass';
   maxCharsPerLine: number;
   maxLines: number;
   readingSpeed: number; // chars per second
+  minDuration?: number; // seconds
+  maxDuration?: number; // seconds
+  highlight?: {
+    enabled?: boolean;
+    color?: string;
+    pattern?: string;
+  };
+  style?: {
+    fontName?: string;
+    fontSize?: number;
+    primaryColor?: string;
+    outlineColor?: string;
+    outline?: number;
+    shadow?: number;
+    backColor?: string;
+    bold?: number;
+    alignment?: number;
+    marginV?: number;
+    marginL?: number;
+    marginR?: number;
+    fadeIn?: number;
+    fadeOut?: number;
+  };
 }
 
 /**
@@ -214,3 +237,4 @@ export interface AnalyticsCollectionNodeConfig extends NodeConfig {
   reportFormat: 'json' | 'csv';
 }
 */
+
