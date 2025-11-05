@@ -1,10 +1,12 @@
 {
   "enabled": true,
-  "timeout": 600000,
+  "timeout": 900000,
   "retryCount": 3,
   "retryDelay": 5000,
   "codexCommand": "codex",
-  "codexArgs": ["--search"],
+  "codexArgs": [
+    "--search"
+  ],
   "defaultTheme": "今日のAIニュース",
   "defaultKeywords": [
     "AI",

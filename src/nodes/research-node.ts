@@ -189,15 +189,36 @@ ${fixedSuffix}
    */
   private async executeCodexCLI(prompt: string, config: ResearchNodeConfig): Promise<string> {
     const command = config.codexCommand || 'codex';
-    const args = [...(config.codexArgs || ['--search']), prompt];
+    const timeout = config.timeout || 600000; // 10 minutes default
+    const trimmedPrompt = prompt.trim();
 
-    this.logger.debug(`Executing Codex CLI: ${command} ${args[0]}`);
+    if (!trimmedPrompt) {
+      throw new Error('Research prompt is empty after trimming.');
+    }
 
-    const result = await execCommand(command, args, {
-      timeout: config.timeout || 600000 // 10 minutes default
-    });
+    // Collapse excessive whitespace to improve Windows quoting stability
+    const sanitizedPrompt = trimmedPrompt.replace(/\s+/g, ' ');
+    const promptArg = JSON.stringify(sanitizedPrompt);
+    const args = [...(config.codexArgs || ['--search']), promptArg];
 
-    return result.stdout;
+    this.logger.info(`[ResearchNode] Executing Codex CLI (timeout ${timeout}ms, promptLength ${sanitizedPrompt.length})`);
+    this.logger.debug(`[ResearchNode] Codex prompt preview: ${sanitizedPrompt.substring(0, 200)}`);
+
+    const start = Date.now();
+
+    try {
+      const result = await execCommand(command, args, {
+        timeout
+      });
+
+      const duration = Date.now() - start;
+      this.logger.info(`[ResearchNode] Codex CLI completed in ${duration}ms`);
+      return result.stdout;
+    } catch (error) {
+      const duration = Date.now() - start;
+      this.logger.error(`[ResearchNode] Codex CLI failed after ${duration}ms`, error as Error);
+      throw error;
+    }
   }
 
   /**
